@@ -1,16 +1,20 @@
-# Project X
+# Project 3 - Subnetting and Forwarding
 
-- Name: John Doe
-- Email: johndoe@u.boisestate.edu
-- Class: CS123-001
+- Name: Troy Berhow
+- Email: troyberhow@u.boisestate.edu
+- Class: CS525/ECE334-001
 
 ## Known Bugs or Issues
 
-TODO: Are there any known issues?
+There are no know issues or bugs
 
 ## Experience
 
 TODO: Describe your experience with the project (struggles, breakthroughs, etc.).
+
+## Design
+
+
 
 ## Analysis
 
