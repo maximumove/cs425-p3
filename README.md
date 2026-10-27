@@ -10,7 +10,9 @@ There are no know issues or bugs
 
 ## Experience
 
-TODO: Describe your experience with the project (struggles, breakthroughs, etc.).
+This project took us yet another layer deeper, going into the network layer data plane. *explain the data plane*
+
+This project felt a good bit lighter than the previous one, since we have some experince with the layers above this one. It also felt nice to know to what extent we could use AI, which was much quicker to locate a peice on information I had forgotten that skiming the book or using google. I particualarly found it interesting to work with the routing, both because it was a bit more involved, and because it made me think about some of the the applications I use frequently and how they would work. The most challenging part was run_lookup in main, as it had the most corssover of the different parts, and this was where both using the book and ai to explain stuff was useful.
 
 ## Design
 
@@ -37,12 +39,3 @@ greatest prefix length. Thus, more-specific routes win regardless of insertion
 order; a `/0` default route is used only if no more-specific route matches.
 Table-file entries must name a network address (host bits all zero), and
 `default` is accepted as shorthand for `0.0.0.0/0`.
-
-## Analysis
-
-TODO: Provide your analysis of the results. If the assignment does not require
-analysis, you can remove this section.
-
-Here is an example of how to include a plot in your README:
-
-![Example Image](scripts/example_plot.png)
