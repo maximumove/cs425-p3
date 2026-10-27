@@ -10,7 +10,7 @@ There are no know issues or bugs
 
 ## Experience
 
-This project took us yet another layer deeper, going into the network layer data plane. *explain the data plane*
+This project took us yet another layer deeper, going into the network layer data plane. The data plane handles the per-packet work of moving packets through a router. It examines a packet's destination IP address, looks up the best matching entry in the forwarding table, and sends the packet out the appropriate interface toward its next hop. The control plane determines the routes and builds the forwarding table, while the data plane applies those decisions quickly to each packet.
 
 This project felt a good bit lighter than the previous one, since we have some experince with the layers above this one. It also felt nice to know to what extent we could use AI, which was much quicker to locate a peice on information I had forgotten that skiming the book or using google. I particualarly found it interesting to work with the routing, both because it was a bit more involved, and because it made me think about some of the the applications I use frequently and how they would work. The most challenging part was run_lookup in main, as it had the most corssover of the different parts, and this was where both using the book and ai to explain stuff was useful.
 
