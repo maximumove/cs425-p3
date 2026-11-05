@@ -25,6 +25,38 @@ void test_ip_parse_and_format(void)
     TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xdeadbeef), address);
   }
   TEST_ASSERT_FALSE(ip_parse(NULL, &address));
+  TEST_ASSERT_FALSE(ip_parse("1.2.3.4", NULL));
+}
+
+void test_cidr_edge_cases(void)
+{
+  cidr_t block = {UINT32_C(0xc0a80100), 24U};
+  cidr_t subnet = {0U, 0U};
+  char formatted[CIDR_STR_LEN];
+
+  TEST_ASSERT_FALSE(cidr_parse(NULL, &block));
+  TEST_ASSERT_FALSE(cidr_parse("1.2.3.4/24", NULL));
+  TEST_ASSERT_FALSE(cidr_parse("1.2.3.4", &block));
+  TEST_ASSERT_FALSE(cidr_parse("1.2.3.4/24/1", &block));
+  TEST_ASSERT_FALSE(cidr_parse("/24", &block));
+  TEST_ASSERT_FALSE(cidr_parse("12345678901234567/24", &block));
+
+  TEST_ASSERT_EQUAL_HEX32(UINT32_MAX, cidr_mask(32U));
+  TEST_ASSERT_EQUAL_HEX32(UINT32_MAX, cidr_mask(33U));
+  TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xc0a80100),
+                          cidr_first_host((cidr_t){UINT32_C(0xc0a80101), 31U}));
+  TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xc0a80101),
+                          cidr_last_host((cidr_t){UINT32_C(0xc0a80100), 31U}));
+  TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xc0a80101), cidr_first_host(block));
+  TEST_ASSERT_EQUAL_HEX32(UINT32_C(0xc0a801fe), cidr_last_host(block));
+  TEST_ASSERT_EQUAL_UINT64(1U, cidr_host_count((cidr_t){0U, 33U}));
+  cidr_format((cidr_t){UINT32_C(0x01020304), 33U}, formatted);
+  TEST_ASSERT_EQUAL_STRING("1.2.3.4/32", formatted);
+
+  TEST_ASSERT_FALSE(cidr_subnet(block, 2U, 0U, NULL));
+  TEST_ASSERT_FALSE(cidr_subnet(block, 0U, 0U, &subnet));
+  TEST_ASSERT_FALSE(cidr_subnet((cidr_t){UINT32_C(0xc0a80100), 32U},
+                                2U, 0U, &subnet));
 }
 
 void test_cidr_parse_and_arithmetic(void)
@@ -105,6 +137,27 @@ void test_route_table_and_longest_prefix(void)
   table_destroy(NULL);
 }
 
+void test_invalid_route_and_table_inputs(void)
+{
+  fwd_table_t *table = table_create();
+  route_t route;
+
+  TEST_ASSERT_NOT_NULL(table);
+  TEST_ASSERT_FALSE(route_parse(NULL, &route));
+  TEST_ASSERT_FALSE(route_parse("default direct eth0", NULL));
+  TEST_ASSERT_FALSE(route_parse("", &route));
+  TEST_ASSERT_FALSE(route_parse("1234567890123456789 direct eth0", &route));
+  TEST_ASSERT_FALSE(route_parse("default direct 1234567890123456", &route));
+  TEST_ASSERT_FALSE(route_parse("default 1234567890123456 eth0", &route));
+  TEST_ASSERT_FALSE(route_parse("default not-an-ip eth0", &route));
+  TEST_ASSERT_FALSE(table_add(NULL, &route));
+  TEST_ASSERT_FALSE(table_add(table, NULL));
+  TEST_ASSERT_FALSE(table_add(table, &(route_t){{UINT32_C(0x0a000001), 8U}, 0U, "eth0"}));
+  TEST_ASSERT_NULL(table_lookup(NULL, 0U));
+  TEST_ASSERT_NULL(table_lookup(table, UINT32_C(0x01020304)));
+  table_destroy(table);
+}
+
 void test_table_load(void)
 {
   fwd_table_t *table = table_create();
@@ -122,13 +175,49 @@ void test_table_load(void)
   table_destroy(table);
 }
 
+void test_table_load_success_and_arguments(void)
+{
+  fwd_table_t *table = table_create();
+  FILE *input = tmpfile();
+  size_t bad_line = 99U;
+  char long_comment[202];
+
+  TEST_ASSERT_NOT_NULL(table);
+  TEST_ASSERT_NOT_NULL(input);
+  memset(long_comment, ' ', sizeof(long_comment) - 2U);
+  long_comment[sizeof(long_comment) - 2U] = '#';
+  long_comment[sizeof(long_comment) - 1U] = '\n';
+  (void)fwrite(long_comment, 1U, sizeof(long_comment), input);
+  (void)fputs("default direct eth0", input);
+  rewind(input);
+  TEST_ASSERT_TRUE(table_load(table, input, &bad_line));
+  TEST_ASSERT_EQUAL_UINT(0U, bad_line);
+  TEST_ASSERT_EQUAL_UINT(1U, table_count(table));
+  (void)fclose(input);
+  table_destroy(table);
+
+  table = table_create();
+  input = tmpfile();
+  TEST_ASSERT_NOT_NULL(table);
+  TEST_ASSERT_NOT_NULL(input);
+  TEST_ASSERT_TRUE(table_load(table, input, NULL));
+  TEST_ASSERT_FALSE(table_load(NULL, input, &bad_line));
+  TEST_ASSERT_FALSE(table_load(table, NULL, &bad_line));
+  TEST_ASSERT_EQUAL_UINT(0U, bad_line);
+  (void)fclose(input);
+  table_destroy(table);
+}
+
 int main(void)
 {
   UNITY_BEGIN();
   RUN_TEST(test_ip_parse_and_format);
+  RUN_TEST(test_cidr_edge_cases);
   RUN_TEST(test_cidr_parse_and_arithmetic);
   RUN_TEST(test_cidr_subnet);
   RUN_TEST(test_route_table_and_longest_prefix);
+  RUN_TEST(test_invalid_route_and_table_inputs);
   RUN_TEST(test_table_load);
+  RUN_TEST(test_table_load_success_and_arguments);
   return UNITY_END();
 }
